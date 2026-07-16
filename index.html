@@ -33,7 +33,7 @@ table{width:100%;border-collapse:collapse}th{background:var(--n);color:white}th,
 <body>
 <div class="shell">
 <aside class="side">
- <div class="logo">KD FACTORY ERP<small>강동자바라 공장 견적 시스템 V1</small></div>
+ <div class="logo">KD FACTORY ERP<small>강동자바라 공장 견적 시스템 V1.1</small></div>
  <div class="nav">
   <button class="on" data-mod="dash">대시보드</button>
   <button data-mod="jabara">자바라</button>
@@ -80,8 +80,47 @@ function dashTpl(){return `<div class="card"><h2>제품 선택</h2><p class="des
 function jTpl(){return `<div class="card"><h2>스텐 자바라</h2><p class="desc">최소 주문 3m · 100파이 우레탄바퀴 +5,000원/m</p><div class="grid g4"><label>형태<select id="jt"><option>일반형</option><option>고급형</option></select></label><label>재질<select id="jm"><option value="201">SUS201</option><option value="304">SUS304</option></select></label><label>높이<select id="jh"><option value="1200">1200</option><option value="1500">1500</option></select></label><label>길이(m)<input id="jl" type="number" value="3" step=".1"></label><label>수량<input id="jq" type="number" value="1"></label><label>개폐<select id="ji"><option>편개형</option><option>양개형</option></select></label><label>바퀴<select id="jw"><option>우레탄바퀴</option><option>레일바퀴</option><option>100파이 우레탄바퀴</option></select></label><label>비고<input id="jn"></label></div><div class="house"><div class="househead"><b>자바라 하우스</b><label class="switch"><input id="hu" type="checkbox"> 추가</label></div><div id="hf" class="grid g4 hidden"><label>높이<select id="hh"><option>1350</option><option>1650</option></select></label><label>재질<select id="hm"><option value="201">SUS201</option><option value="304">SUS304</option></select></label><label>수량<input id="hq" readonly></label><label>깊이<input id="hd" readonly></label></div><div id="hi"></div></div><div class="result"><div><small>사양</small><b id="js"></b></div><div><small>적용길이</small><b id="ja"></b></div><div><small>단가</small><b id="jr"></b></div><div><small>총금액</small><b id="jtotal"></b></div></div><button id="jadd" class="btn primary" style="width:100%">+ 견적목록 추가</button></div>`}
 function tier(l){if(l<=7.5)return{idx:0,d:'1000mm',r:'~7.5m'};if(l<=10)return{idx:1,d:'1300mm',r:'8.5~10m'};if(l<=13)return{idx:2,d:'1700mm',r:'11~13m'};if(l<=16)return{idx:3,d:'2000mm',r:'14~16m'};return{idx:4,d:'별도문의',r:'17~20m'}}
 function bindJ(){['jt','jm','jh','jl','jq','ji','jw','hh','hm'].forEach(id=>$(id).oninput=upJ);hu.onchange=()=>{hf.classList.toggle('hidden',!hu.checked);upJ()};jadd.onclick=addJ;upJ()}
-function calcJ(){let l=Math.max(3,+jl.value||3),q=Math.max(1,+jq.value||1),rate=jRates[jt.value][jm.value][jh.value]+(jw.value==='100파이 우레탄바퀴'?5000:0),body={name:`스텐 자바라 ${jt.value} SUS${jm.value}`,spec:`H${jh.value} / ${l}m / ${ji.value} / ${jw.value}`,qty:q,unit:rate*l,amount:rate*l*q,note:jn.value};let house=null;if(hu.checked){let t=tier(l),cnt=ji.value==='양개형'?2:1,u=hRates[hh.value][hm.value][t.idx];house={name:`자바라 하우스 SUS${hm.value}`,spec:`H${hh.value} / 깊이 ${t.d} / ${t.r}`,qty:cnt,unit:u,amount:u*cnt,note:'자동계산'}}return{l,rate,body,house}}
-function upJ(){let c=calcJ(),t=tier(c.l);hq.value=ji.value==='양개형'?2:1;hd.value=t.d;js.textContent=`${jt.value}/SUS${jm.value}/H${jh.value}`;ja.textContent=c.l+'m';jr.textContent=won(c.rate)+'/m';jtotal.textContent=won(c.body.amount+(c.house?c.house.amount:0));hi.textContent=c.house?`${t.r} · ${t.d} · ${won(c.house.amount)}`:''}
+function calcJ(){
+  let l=Math.max(3,+jl.value||3),
+      q=Math.max(1,+jq.value||1),
+      rate=jRates[jt.value][jm.value][jh.value]+(jw.value==='100파이 우레탄바퀴'?5000:0),
+      splitLength=ji.value==='양개형'?l/2:l,
+      body={
+        name:`스텐 자바라 ${jt.value} SUS${jm.value}`,
+        spec:`H${jh.value} / 총 ${l}m / ${ji.value}${ji.value==='양개형'?` (${splitLength}m × 2짝)`:''} / ${jw.value}`,
+        qty:q,
+        unit:rate*l,
+        amount:rate*l*q,
+        note:jn.value
+      };
+  let house=null;
+  if(hu.checked){
+    let t=tier(splitLength),
+        cnt=ji.value==='양개형'?2:1,
+        u=hRates[hh.value][hm.value][t.idx];
+    house={
+      name:`자바라 하우스 SUS${hm.value}`,
+      spec:`H${hh.value} / 제작기준 ${splitLength}m × ${cnt}EA / 깊이 ${t.d} / ${t.r}`,
+      qty:cnt,
+      unit:u,
+      amount:u*cnt,
+      note:ji.value==='양개형'?'양개형 분할 자동계산':'편개형 자동계산'
+    }
+  }
+  return{l,splitLength,rate,body,house}
+}
+function upJ(){
+  let c=calcJ(),
+      t=tier(c.splitLength),
+      cnt=ji.value==='양개형'?2:1;
+  hq.value=cnt;
+  hd.value=t.d;
+  js.textContent=`${jt.value}/SUS${jm.value}/H${jh.value}`;
+  ja.textContent=ji.value==='양개형'?`총 ${c.l}m → ${c.splitLength}m × 2짝`:`${c.l}m`;
+  jr.textContent=won(c.rate)+'/m';
+  jtotal.textContent=won(c.body.amount+(c.house?c.house.amount:0));
+  hi.textContent=c.house?`하우스 제작기준 ${c.splitLength}m × ${cnt}EA · ${t.r} · 깊이 ${t.d} · ${won(c.house.amount)}`:''
+}
 function addJ(){let c=calcJ();items.push(c.body);if(c.house)items.push(c.house);drawList();toast('자바라 추가')}
 function opt(n,p,cls){return `<div class="opt"><label><input class="${cls}" type="checkbox" data-name="${n}" data-price="${p}"> ${n}</label><input class="${cls}q" type="number" value="1" min="1"><small>${won(p)}/개</small></div>`}
 function lTpl(){return `<div class="card"><h2>사다리</h2><p class="desc">로스 적용 시 최소 3m, 1m 단위 올림</p><div class="tabs" id="ltab"><button class="on" data-t="safe">안전망</button><button data-t="bending">밴딩</button><button data-t="straight">일자</button></div><div class="tabs" id="lmat"><button class="on" data-m="201">SUS201</button><button data-m="304">SUS304</button></div><div class="grid g4"><label>주문높이(mm)<input id="lh" type="number"></label><label>수량<input id="lq" type="number" value="1"></label><label>단가<input id="lr" readonly></label><label>본체금액<input id="lb" readonly></label></div><label class="switch" style="margin-top:12px"><input id="loss" type="checkbox" checked> 로스 적용</label><div class="opts">${opt('엘보',5000,'lo')}${opt('빠찌',5000,'lo')}${opt('베이스판',10000,'lo')}${opt('구름다리',80000,'lo')}${opt('시건장치',80000,'lo')}</div><div class="result"><div><small>제품</small><b id="lname"></b></div><div><small>주문/계산</small><b id="llen"></b></div><div><small>옵션</small><b id="lopt"></b></div><div><small>총금액</small><b id="ltotal"></b></div></div><button id="ladd" class="btn primary" style="width:100%">+ 견적목록 추가</button></div>`}
