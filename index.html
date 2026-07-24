@@ -5,7 +5,7 @@
 <title>KD Factory ERP V1</title>
 <style>
 :root{--n:#113351;--b:#edf3f8;--l:#cbd8e4;--m:#6a7d90}
-*{box-sizing:border-box}body{margin:0;background:#eef3f7;font-family:Pretendard,"Noto Sans KR",Arial;color:#10243a}button,input,select{font:inherit}
+*{box-sizing:border-box}body{margin:0;background:#eef3f7;font-family:Pretendard,"Noto Sans KR",Arial;color:#10243a}button,input,select{font:inherit}a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}.side{background:var(--n);color:white;padding:20px 14px;display:flex;flex-direction:column}.logo{font-weight:900;font-size:19px;padding:10px 8px 24px}.logo small{display:block;font-size:11px;color:#b8cada;margin-top:5px}
 .nav{display:grid;gap:6px}.nav button{border:0;background:transparent;color:#dbe7f1;text-align:left;padding:13px;border-radius:10px;font-weight:800;cursor:pointer}.nav button.on{background:white;color:var(--n)}.nav button.off{opacity:.45;cursor:not-allowed}.sidefoot{margin-top:auto;display:grid;gap:8px}
 .btn{border:0;border-radius:9px;padding:11px 14px;font-weight:900;cursor:pointer}.primary{background:var(--n);color:white}.soft{background:var(--b);color:var(--n)}.ghost{background:#264b6a;color:white}.green{background:#198754;color:white}
@@ -57,7 +57,7 @@ table{width:100%;border-collapse:collapse}th{background:var(--n);color:white}th,
  </div>
 </aside>
 <main class="main">
- <header class="top"><div><h1 id="title">대시보드</h1><p id="subtitle">제품을 선택해 통합 견적을 작성하세요.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button id="makeQuote" class="btn primary">견적서 만들기</button><button id="makeOrder" class="btn orderbtn">발주서 만들기</button><button id="makeStatement" class="btn statementbtn">거래명세서 만들기</button></div></header>
+ <header class="top"><div><h1 id="title">대시보드</h1><p id="subtitle">제품을 선택해 통합 견적을 작성하세요.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button id="makeQuote" class="btn primary">견적서 만들기</button><button id="makeOrder" class="btn orderbtn">발주서 만들기</button><button id="makeStatement" class="btn statementbtn">거래명세서 만들기</button><a class="btn green" href="https://choi2704.github.io/yongdal-calculator/" target="_blank" rel="noopener noreferrer">🚚 용달비 계산기</a></div></header>
  <section class="customer"><div class="grid g6">
   <label>견적일자<input id="date" type="date"></label><label>업체명<input id="company"></label><label>담당자<input id="manager"></label><label>연락처<input id="phone"></label><label>이메일<input id="email"></label><label>현장명<input id="site"></label>
  </div></section>
