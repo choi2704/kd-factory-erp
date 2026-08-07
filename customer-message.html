@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강동자바라 고객 메시지 복사</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f4f7fb;font-family:Arial,"Noto Sans KR",sans-serif;color:#1f2937}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 16px 40px}
+  h1{font-size:26px;margin:0 0 8px}
+  .desc{color:#64748b;margin:0 0 20px}
+  .form,.card,.memo-card{background:#fff;border:1px solid #dbe3ee;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 5px 18px rgba(15,23,42,.06)}
+  .section{padding:15px 0;border-top:1px solid #e5e7eb}
+  .section:first-child{padding-top:0;border-top:0}
+  .section-title{font-size:16px;font-weight:800;margin:0 0 10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label.field{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+  input[type=text],input[type=date],textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font-size:16px;background:#fff}
+  textarea{min-height:82px;resize:vertical;line-height:1.5}
+  .choices{display:flex;flex-wrap:wrap;gap:9px}
+  .choice{position:relative}
+  .choice input{position:absolute;opacity:0;pointer-events:none}
+  .choice span{display:block;min-width:86px;padding:11px 15px;text-align:center;border:2px solid #cbd5e1;border-radius:12px;background:#fff;font-size:16px;font-weight:700;cursor:pointer}
+  .choice input:checked + span{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+  .product-choice span{min-width:130px;font-size:18px}
+  .hidden{display:none}
+  .card h2{font-size:20px;margin:0 0 12px}
+  .preview{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;line-height:1.65;min-height:150px}
+  button{width:100%;border:0;border-radius:12px;padding:15px 14px;margin-top:12px;font-size:18px;font-weight:800;cursor:pointer}
+  .order{background:#2563eb;color:#fff}
+  .schedule-btn{background:#059669;color:#fff}
+  .cost{background:#db2777;color:#fff}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s}
+  .toast.show{opacity:1}
+  @media(max-width:1100px){.app-grid{grid-template-columns:minmax(320px,.9fr) minmax(380px,1.1fr)}.memo-card{grid-column:1 / -1;position:static}#memoText{min-height:320px}.control-column .form{position:static}}
+  @media(max-width:760px){.app-grid{grid-template-columns:1fr}.memo-card{grid-column:auto}.control-column .form{position:static}#memoText{min-height:300px}}
+  @media(max-width:600px){
+    .grid{grid-template-columns:1fr}
+    h1{font-size:23px}
+    .choice{flex:1 1 calc(50% - 9px)}
+    .choice span{min-width:0}
+  }
+
+  .app-grid{display:grid;grid-template-columns:minmax(330px,.85fr) minmax(380px,1fr) minmax(360px,.9fr);gap:18px;align-items:start}
+  .memo-card{position:sticky;top:16px}
+  .control-column{min-width:0}
+  .message-column{min-width:0}
+  .message-column .card{margin-bottom:16px}.message-type-choice .choice{flex:1}.message-type-choice .choice span{min-width:0}.message-column .preview{min-height:430px;font-size:16px}
+  .control-column .form{position:sticky;top:16px}
+
+  .memo-card h2{font-size:20px;margin:0 0 7px}
+  .memo-help{margin:0 0 12px;color:#64748b;font-size:14px;line-height:1.5}
+  #memoText{min-height:540px;background:#fffef7;border:2px solid #f1d98c;line-height:1.7;font-size:16px}
+  .memo-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .memo-copy{background:#111827;color:#fff}
+  .memo-clear{background:#e5e7eb;color:#111827}
+  .load-btn{background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;margin-top:9px;padding:11px;font-size:15px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>고객 안내 메시지</h1>
+  <p class="desc">왼쪽에서 제품 옵션을 선택하고, 가운데에서 안내 종류를 고르면 메시지가 한 개 창에 즉시 표시됩니다.</p>
+
+  <div class="app-grid">
+  <section class="control-column">
+  <div class="form">
+    <div class="section">
+      <div class="section-title">제품 선택</div>
+      <div class="choices product-choice">
+        <label class="choice"><input type="radio" name="product" value="렉산" checked><span>렉산</span></label>
+        <label class="choice"><input type="radio" name="product" value="자바라"><span>자바라</span></label>
+        <label class="choice"><input type="radio" name="product" value="방범창"><span>방범창</span></label>
+      </div>
+    </div>
+
+    <div id="lexanFields">
+      <div class="section">
+        <div class="section-title">렉산 컬러</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="lexanColor" value="투명" checked><span>투명</span></label>
+          <label class="choice"><input type="radio" name="lexanColor" value="브론즈"><span>브론즈</span></label>
+          <label class="choice"><input type="radio" name="lexanColor" value="블루"><span>블루</span></label>
+          <label class="choice"><input type="radio" name="lexanColor" value="그린"><span>그린</span></label>
+          <label class="choice"><input type="radio" name="lexanColor" value="투명엠보"><span>투명엠보</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">렉산 두께</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="lexanThickness" value="2T" checked><span>2T</span></label>
+          <label class="choice"><input type="radio" name="lexanThickness" value="3T"><span>3T</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <label class="field" for="lexanSizes">사이즈 및 수량</label>
+        <textarea id="lexanSizes">1,000 × 3,000mm / 10장
+1,000 × 4,000mm / 1장</textarea>
+      </div>
+    </div>
+
+    <div id="jabaraFields" class="hidden">
+      <div class="section">
+        <div class="section-title">형태</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="jabaraType" value="일반형" checked><span>일반형</span></label>
+          <label class="choice"><input type="radio" name="jabaraType" value="고급형"><span>고급형</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">재질</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="jabaraMaterial" value="SUS201" checked><span>SUS201</span></label>
+          <label class="choice"><input type="radio" name="jabaraMaterial" value="SUS304"><span>SUS304</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">개폐 방식</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="jabaraOpen" value="편개형" checked><span>편개형</span></label>
+          <label class="choice"><input type="radio" name="jabaraOpen" value="양개형"><span>양개형</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">바퀴 종류</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="jabaraWheel" value="우레탄 60파이" checked><span>우레탄 60파이</span></label>
+          <label class="choice"><input type="radio" name="jabaraWheel" value="우레탄 100파이"><span>우레탄 100파이</span></label>
+          <label class="choice"><input type="radio" name="jabaraWheel" value="레일형"><span>레일형</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">하우스</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="jabaraHouse" value="없음" checked><span>없음</span></label>
+          <label class="choice"><input type="radio" name="jabaraHouse" value="하우스 1개"><span>하우스 1개</span></label>
+          <label class="choice"><input type="radio" name="jabaraHouse" value="하우스 2개"><span>하우스 2개</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <label class="field" for="jabaraSize">사이즈</label>
+        <input type="text" id="jabaraSize" placeholder="예: 높이 1,200 × 길이 5,000mm">
+      </div>
+    </div>
+
+
+    <div id="securityFields" class="hidden">
+      <div class="section">
+        <div class="section-title">방범창 재질</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="securityMaterial" value="알루미늄" checked><span>알루미늄</span></label>
+          <label class="choice"><input type="radio" name="securityMaterial" value="SUS201"><span>SUS201</span></label>
+          <label class="choice"><input type="radio" name="securityMaterial" value="SUS304"><span>SUS304</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <label class="field" for="securitySizes">사이즈 및 수량</label>
+        <textarea id="securitySizes" placeholder="예:
+1,000 × 1,200mm / 2개
+1,500 × 1,200mm / 1개"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">배송 방법</div>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="deliveryMethod" value="택배 선불" checked><span>택배 선불</span></label>
+        <label class="choice"><input type="radio" name="deliveryMethod" value="택배 착불"><span>택배 착불</span></label>
+        <label class="choice"><input type="radio" name="deliveryMethod" value="화물 착불"><span>화물 착불</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">부가세</div>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="vatType" value="부가세 포함" checked><span>부가세 포함</span></label>
+        <label class="choice"><input type="radio" name="vatType" value="부가세 별도"><span>부가세 별도</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div>
+          <label class="field" for="schedule">출고 예정일</label>
+          <input type="date" id="schedule">
+        </div>
+        <div>
+          <label class="field" for="amount">제품 금액</label>
+          <input type="text" id="amount" placeholder="예: 350,000원">
+        </div>
+      </div>
+    </div>
+  </div>
+  </section>
+
+  <section class="message-column">
+    <div class="card">
+      <h2>안내 메시지 종류</h2>
+      <div class="choices message-type-choice">
+        <label class="choice"><input type="radio" name="messageType" value="order" checked><span>주문내역</span></label>
+        <label class="choice"><input type="radio" name="messageType" value="schedule"><span>배송일정</span></label>
+        <label class="choice"><input type="radio" name="messageType" value="cost"><span>비용안내</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 id="messageTitle">주문내역 안내</h2>
+      <div class="preview" id="mainPreview"></div>
+      <button class="order" id="mainCopyButton" onclick="copyMessage('mainPreview')">현재 메시지 복사</button>
+      <button class="load-btn" onclick="loadToMemo('mainPreview')">메모장에 불러오기</button>
+    </div>
+  </section>
+
+  <aside class="memo-card">
+    <h2>메시지 수정 메모장</h2>
+    <p class="memo-help">왼쪽 메시지를 불러온 뒤 자유롭게 수정하고, 아래 복사 버튼을 누르세요.</p>
+    <textarea id="memoText" placeholder="수정할 메시지를 이곳에 입력하거나 왼쪽에서 불러오세요."></textarea>
+    <div class="memo-actions">
+      <button class="memo-copy" onclick="copyMemo()">수정한 메시지 복사</button>
+      <button class="memo-clear" onclick="clearMemo()">메모장 비우기</button>
+    </div>
+  </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast">메시지가 복사되었습니다.</div>
+
+<script>
+const allInputs = document.querySelectorAll("input, textarea");
+allInputs.forEach(el => el.addEventListener("input", render));
+document.querySelectorAll('input[type="radio"]').forEach(el => el.addEventListener("change", () => {
+  toggleProduct();
+  render();
+}));
+
+function selected(name){
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : "";
+}
+
+function toggleProduct(){
+  const product = selected("product");
+  document.getElementById("lexanFields").classList.toggle("hidden", product !== "렉산");
+  document.getElementById("jabaraFields").classList.toggle("hidden", product !== "자바라");
+  document.getElementById("securityFields").classList.toggle("hidden", product !== "방범창");
+}
+
+function detail(){
+  const product = selected("product");
+
+  if(product === "렉산"){
+    const sizes = document.getElementById("lexanSizes").value.trim();
+    return `- 컬러: ${selected("lexanColor")}
+- 두께: ${selected("lexanThickness")}
+- 사이즈:
+${sizes ? sizes.split("\n").map(x => "  · " + x).join("\n") : "  · 미입력"}`;
+  }
+
+  if(product === "자바라"){
+    const size = document.getElementById("jabaraSize").value.trim() || "미입력";
+    return `- 형태: ${selected("jabaraType")}
+- 재질: ${selected("jabaraMaterial")}
+- 개폐 방식: ${selected("jabaraOpen")}
+- 바퀴 종류: ${selected("jabaraWheel")}
+- 하우스: ${selected("jabaraHouse")}
+- 사이즈: ${size}`;
+  }
+
+  const sizes = document.getElementById("securitySizes").value.trim();
+  return `- 재질: ${selected("securityMaterial")}
+- 사이즈:
+${sizes ? sizes.split("\n").map(x => "  · " + x).join("\n") : "  · 미입력"}`;
+}
+
+function formatKoreanDate(value){
+  if(!value) return "미정";
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${year}년 ${month}월 ${day}일(${weekdays[date.getDay()]})`;
+}
+
+function render(){
+  const product = selected("product");
+  const schedule = formatKoreanDate(document.getElementById("schedule").value);
+  const amount = document.getElementById("amount").value.trim() || "○○○원";
+  const deliveryMethod = selected("deliveryMethod");
+  const vatType = selected("vatType");
+  const details = detail();
+
+  let deliveryNotice = "";
+  if(deliveryMethod === "택배 선불"){
+    deliveryNotice = "택배 선불로 배송됩니다.";
+  }else if(deliveryMethod === "택배 착불"){
+    deliveryNotice = "택배 착불로 배송됩니다.\n착불 배송비는 담당 기사님께 확인 부탁드립니다.";
+  }else{
+    deliveryNotice = "화물 착불로 배송됩니다.\n착불 운임은 화물 영업소 또는 담당 기사님께 확인 부탁드립니다.";
+  }
+
+  const orderMessage =
+`안녕하세요. 강동자바라입니다.
+주문하신 ${product} 내역을 안내드립니다.
+
+[주문 내역]
+${details}
+
+- 배송 방법: ${deliveryMethod}
+
+감사합니다.`;
+
+  const scheduleMessage =
+`안녕하세요. 강동자바라입니다.
+주문하신 ${product} 출고 일정을 안내드립니다.
+
+[주문 내역]
+${details}
+
+${schedule} 출고 예정입니다.
+${deliveryNotice}
+감사합니다.`;
+
+  const costMessage =
+`안녕하세요. 강동자바라입니다.
+문의하신 ${product} 비용을 안내드립니다.
+
+[제품 내역]
+${details}
+
+- 제품 금액: ${amount}
+- 부가세: ${vatType.replace("부가세 ", "")}
+- 배송 방법: ${deliveryMethod}
+
+감사합니다.`;
+
+  const messageType = selected("messageType") || "order";
+  const messageMap = {
+    order: {title: "주문내역 안내", text: orderMessage, buttonClass: "order"},
+    schedule: {title: "배송일정 안내", text: scheduleMessage, buttonClass: "schedule-btn"},
+    cost: {title: "비용 안내", text: costMessage, buttonClass: "cost"}
+  };
+  const current = messageMap[messageType];
+
+  document.getElementById("messageTitle").textContent = current.title;
+  document.getElementById("mainPreview").textContent = current.text;
+
+  const copyButton = document.getElementById("mainCopyButton");
+  copyButton.className = current.buttonClass;
+  copyButton.textContent = current.title + " 메시지 복사";
+}
+
+
+function showToast(message){
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 1500);
+}
+
+function loadToMemo(id){
+  document.getElementById("memoText").value = document.getElementById(id).textContent;
+  showToast("메모장에 불러왔습니다.");
+  if(window.innerWidth <= 900){
+    document.querySelector(".memo-card").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+}
+
+async function copyMemo(){
+  const memo = document.getElementById("memoText").value;
+  if(!memo.trim()){
+    showToast("복사할 내용이 없습니다.");
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(memo);
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = memo;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  showToast("수정한 메시지가 복사되었습니다.");
+}
+
+function clearMemo(){
+  document.getElementById("memoText").value = "";
+  showToast("메모장을 비웠습니다.");
+}
+
+
+async function copyMessage(id){
+  const text = document.getElementById(id).textContent;
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+
+  showToast("메시지가 복사되었습니다.");
+}
+
+toggleProduct();
+render();
+</script>
+</body>
+</html>
